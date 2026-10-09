@@ -73,6 +73,32 @@ describe('getHoursDescription', () => {
     });
   });
 
+  describe('several minutes', () => {
+    it('should describe a single hour as the hour it spans', () => {
+      expect(getHoursDescription('9', '*/15', options24)).toBe(
+        'between 09:00 UTC and 09:59 UTC',
+      );
+      expect(getHoursDescription('9', '*', options24)).toBe(
+        'between 09:00 UTC and 09:59 UTC',
+      );
+      expect(getHoursDescription('9', '0,30', options24)).toBe(
+        'between 09:00 UTC and 09:59 UTC',
+      );
+      expect(getHoursDescription('14', '15-45', options12)).toBe(
+        'between 2:00 PM UTC and 2:59 PM UTC',
+      );
+    });
+
+    it('should describe a list of hours on the hour', () => {
+      expect(getHoursDescription('9,17', '*/15', options24)).toBe(
+        'at 09:00 UTC and 17:00 UTC',
+      );
+      expect(getHoursDescription('9,12,15', '0,30', options24)).toBe(
+        'at 09:00 UTC, 12:00 UTC and 15:00 UTC',
+      );
+    });
+  });
+
   describe('edge cases', () => {
     it('should handle empty hours', () => {
       expect(getHoursDescription('', '0', options24)).toBe('');

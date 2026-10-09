@@ -2,6 +2,8 @@ import { t } from '@lingui/core/macro';
 import { type Locale } from 'date-fns';
 import { isDefined } from 'twenty-shared/utils';
 
+import { isNumericValue } from '~/utils/validation/isNumericValue';
+
 import { getDayOfMonthDescription } from './descriptors/getDayOfMonthDescription';
 import { getDayOfWeekDescription } from './descriptors/getDayOfWeekDescription';
 import { getHoursDescription } from './descriptors/getHoursDescription';
@@ -28,8 +30,6 @@ export const describeCronExpression = (
 
     const descriptions: string[] = [];
 
-    // Smart priority: Use hours description when we have specific hours,
-    // otherwise use minutes description for patterns like */5
     const hoursDescription = getHoursDescription(
       parts.hours,
       parts.minutes,
@@ -40,24 +40,18 @@ export const describeCronExpression = (
       mergedOptions,
     );
 
-    if (parts.minutes.includes('/') && parts.hours.includes('-')) {
-      // Special case: minute intervals with hour ranges (e.g., "*/15 9-17")
+    if (!isNumericValue(parts.minutes)) {
+      // Several minutes (e.g., "*/15", "0,30", "15-45") do not fit in the clock
+      // time of the hours description, so they come first and the hours narrow them down
       if (isDefined(minutesDescription) && minutesDescription !== '') {
         descriptions.push(minutesDescription);
       }
-      if (isDefined(hoursDescription) && hoursDescription !== '') {
-        const cleanHoursDesc = hoursDescription.replace(/^at\s+/, '');
-        descriptions.push(cleanHoursDesc);
-      }
-    } else if (
-      parts.hours === '*' &&
-      (parts.minutes.includes('/') ||
-        parts.minutes.includes('-') ||
-        parts.minutes === '*')
-    ) {
-      // Pattern like "*/5 * * * *", "15-45 * * * *", or "* * * * *" - prioritize minutes
-      if (isDefined(minutesDescription) && minutesDescription !== '') {
-        descriptions.push(minutesDescription);
+      if (
+        parts.hours !== '*' &&
+        isDefined(hoursDescription) &&
+        hoursDescription !== ''
+      ) {
+        descriptions.push(hoursDescription);
       }
     } else if (parts.hours === '*' && parts.minutes === '0') {
       // Pattern like "0 * * * *" - should be "every hour", not "at the top of the hour"

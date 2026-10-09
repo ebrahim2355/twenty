@@ -152,6 +152,62 @@ describe('describeCronExpression', () => {
     });
   });
 
+  describe('several minutes within specific hours', () => {
+    it('should describe a minute interval within a single hour', () => {
+      expect(describeCronExpression('*/15 9 * * *')).toBe(
+        'every 15 minutes between 09:00 UTC and 09:59 UTC',
+      );
+    });
+
+    it('should describe every minute of a single hour', () => {
+      expect(describeCronExpression('* 9 * * *')).toBe(
+        'every minute between 09:00 UTC and 09:59 UTC',
+      );
+    });
+
+    it('should describe a minute interval within several hours', () => {
+      expect(describeCronExpression('*/15 9,17 * * *')).toBe(
+        'every 15 minutes at 09:00 UTC and 17:00 UTC',
+      );
+    });
+
+    it('should describe a minute interval within an hour interval', () => {
+      expect(describeCronExpression('*/5 */2 * * *')).toBe(
+        'every 5 minutes every 2 hours',
+      );
+    });
+
+    it('should describe every listed minute of a single hour', () => {
+      expect(describeCronExpression('0,30 9 * * *')).toBe(
+        'at minutes 0 and 30 between 09:00 UTC and 09:59 UTC',
+      );
+    });
+
+    it('should describe every listed minute of every hour', () => {
+      expect(describeCronExpression('0,30 * * * *')).toBe(
+        'at minutes 0 and 30',
+      );
+    });
+
+    it('should describe a minute range within a single hour', () => {
+      expect(describeCronExpression('15-45 9 * * *')).toBe(
+        'between minute 15 and 45 between 09:00 UTC and 09:59 UTC',
+      );
+    });
+
+    it('should keep the day description', () => {
+      expect(describeCronExpression('*/15 9 * * 1-5')).toBe(
+        'every 15 minutes between 09:00 UTC and 09:59 UTC on weekdays',
+      );
+    });
+
+    it('should use 12-hour format when specified', () => {
+      expect(
+        describeCronExpression('*/15 14 * * *', { use24HourTimeFormat: false }),
+      ).toBe('every 15 minutes between 2:00 PM UTC and 2:59 PM UTC');
+    });
+  });
+
   describe('edge cases', () => {
     it('should handle empty expression', () => {
       expect(() => describeCronExpression('')).toThrow(

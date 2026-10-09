@@ -4,6 +4,7 @@ import { isDefined } from 'twenty-shared/utils';
 import { formatTime as formatCronTime } from '~/utils/format/formatTime';
 import { isListValue } from '~/utils/validation/isListValue';
 import { isNumericRange } from '~/utils/validation/isNumericRange';
+import { isNumericValue } from '~/utils/validation/isNumericValue';
 import { isStepValue } from '~/utils/validation/isStepValue';
 import { type CronDescriptionOptions } from '~/utils/cron-to-human/types/CronDescriptionOptions';
 
@@ -17,6 +18,9 @@ export const getHoursDescription = (
   }
 
   const use24Hour = options.use24HourTimeFormat ?? true;
+  const minute = minutes || '0';
+  // A clock time holds one minute: "*/15", "0,30" or "15-45" cannot be printed in it
+  const hasSingleMinute = isNumericValue(minute);
 
   if (hours === '*') {
     return t`every hour`;
@@ -78,7 +82,7 @@ export const getHoursDescription = (
     const formattedTimes = values.map((hour) =>
       formatCronTime({
         hour,
-        minute: minutes || '0',
+        minute: hasSingleMinute ? minute : '0',
         use24HourFormat: use24Hour,
         appendUTC: true,
       }),
@@ -96,9 +100,25 @@ export const getHoursDescription = (
 
   const hourNum = parseInt(hours, 10);
   if (!isNaN(hourNum)) {
+    if (!hasSingleMinute) {
+      const startTime = formatCronTime({
+        hour: hours,
+        minute: '0',
+        use24HourFormat: use24Hour,
+        appendUTC: true,
+      });
+      const endTime = formatCronTime({
+        hour: hours,
+        minute: '59',
+        use24HourFormat: use24Hour,
+        appendUTC: true,
+      });
+      return t`between ${startTime} and ${endTime}`;
+    }
+
     const formattedTime = formatCronTime({
       hour: hours,
-      minute: minutes || '0',
+      minute,
       use24HourFormat: use24Hour,
       appendUTC: true,
     });
